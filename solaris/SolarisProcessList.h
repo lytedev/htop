@@ -15,7 +15,6 @@ in the source distribution for its full text.
 
 #include <kstat.h>
 #include <sys/param.h>
-#include <zone.h>
 #include <sys/uio.h>
 #include <sys/resource.h>
 #include <sys/sysconf.h>
@@ -49,9 +48,15 @@ char* SolarisProcessList_readZoneName(kstat_ctl_t* kd, SolarisProcess* sproc);
 
 ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidWhiteList, uid_t userId);
 
-void ProcessList_delete(ProcessList* this);
+void ProcessList_delete(ProcessList* pl);
 
-void ProcessList_enumerateLWPs(Process* proc, char* name, ProcessList* pl, struct timeval tv);
+/* NOTE: the following is a callback function of type proc_walk_f
+ *       and MUST conform to the appropriate definition in order
+ *       to work.  See libproc(3LIB) on a Solaris or Illumos
+ *       system for more info.
+ */ 
+
+int SolarisProcessList_walkproc(psinfo_t *_psinfo, lwpsinfo_t *_lwpsinfo, void *listptr);
 
 void ProcessList_goThroughEntries(ProcessList* this);
 

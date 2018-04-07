@@ -20,6 +20,8 @@ in the source distribution for its full text.
 /*{
 #include "Settings.h"
 #include <zone.h>
+#include <sys/proc.h>
+#include <libproc.h>
 
 typedef enum SolarisProcessFields {
    // Add platform-specific fields here, with ids >= 100
@@ -74,7 +76,7 @@ ProcessFieldData Process_fields[] = {
    [0] = { .name = "", .title = NULL, .description = NULL, .flags = 0, },
    [PID] = { .name = "PID", .title = "    PID    ", .description = "Process/thread ID", .flags = 0, },
    [COMM] = { .name = "Command", .title = "Command ", .description = "Command line", .flags = 0, },
-   [STATE] = { .name = "STATE", .title = "S ", .description = "Process state (S sleeping, R running, D disk, Z zombie, T traced, W paging)", .flags = 0, },
+   [STATE] = { .name = "STATE", .title = "S ", .description = "Process state (S sleeping, R running, O onproc, Z zombie, T stopped, W waiting)", .flags = 0, },
    [PPID] = { .name = "PPID", .title = "   PPID ", .description = "Parent process ID", .flags = 0, },
    [PGRP] = { .name = "PGRP", .title = "   PGRP ", .description = "Process group ID", .flags = 0, },
    [SESSION] = { .name = "SESSION", .title = "    SID ", .description = "Process's session ID", .flags = 0, },
@@ -129,10 +131,10 @@ SolarisProcess* SolarisProcess_new(Settings* settings) {
 }
 
 void Process_delete(Object* cast) {
-   SolarisProcess* this = (SolarisProcess*) cast;
+   SolarisProcess* sp = (SolarisProcess*) cast;
    Process_done((Process*)cast);
-   free(this->zname);
-   free(this);
+   free(sp->zname);
+   free(sp);
 }
 
 void SolarisProcess_writeField(Process* this, RichString* str, ProcessField field) {
@@ -157,13 +159,7 @@ void SolarisProcess_writeField(Process* this, RichString* str, ProcessField fiel
    }
    case PID: xSnprintf(buffer, n, Process_pidFormat, sp->realpid); break;
    case PPID: xSnprintf(buffer, n, Process_pidFormat, sp->realppid); break;
-   case LWPID:{
-      if (sp->lwpid <= 0) {
-         xSnprintf(buffer, n, "    - ");   
-      } else {
-         xSnprintf(buffer, n, Process_pidFormat, sp->lwpid); break;
-      }
-   }; break;
+   case LWPID: xSnprintf(buffer, n, Process_pidFormat, sp->lwpid); break;
    default:
       Process_writeField(this, str, field);
       return;
